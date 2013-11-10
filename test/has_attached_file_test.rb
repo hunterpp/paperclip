@@ -42,6 +42,17 @@ class HasAttachedFileTest < Test::Unit::TestCase
     should 'define the Paperclip-specific callbacks' do
       assert_adding_attachment('avatar').defines_callback('define_paperclip_callbacks')
     end
+
+    should 'define Mongoid fields on Mongoid objects' do
+      assert_adding_attachment('avatar').defines_mongoid_field('avatar_file_name', String)
+      assert_adding_attachment('avatar').defines_mongoid_field('avatar_content_type', String)
+      assert_adding_attachment('avatar').defines_mongoid_field('avatar_file_size', Integer)
+      assert_adding_attachment('avatar').defines_mongoid_field('avatar_updated_at', Time)
+    end
+
+    should 'not define Mongoid fields on ActiveRecord objects' do
+      assert_adding_attachment('avatar').not_define_mongoid_fields_on_active_record
+    end
   end
 
   private
@@ -108,6 +119,24 @@ class HasAttachedFileTest < Test::Unit::TestCase
       assert_received(a_class, callback_name.to_sym)
     end
 
+    def defines_mongoid_field(field, type)
+      m_class = stub_mongoid_class
+
+      Paperclip::HasAttachedFile.define_on(m_class, @attachment_name, {})
+
+      assert_received(m_class, :field) do |expect|
+        expect.with(field.to_sym, :type => type)
+      end
+    end
+
+    def not_define_mongoid_fields_on_active_record
+      a_class = stub_class
+
+      Paperclip::HasAttachedFile.define_on(a_class, @attachment_name, {})
+
+      assert !have_received(:field).matches?(a_class)
+    end
+
     private
 
     def stub_class
@@ -119,7 +148,22 @@ class HasAttachedFileTest < Test::Unit::TestCase
            after_commit: nil,
            define_paperclip_callbacks: nil,
            extend: nil,
+           included_modules: [],
            name: 'Billy')
+    end
+
+    def stub_mongoid_class
+      stub('class',
+           validates_each: nil,
+           define_method: nil,
+           after_save: nil,
+           before_destroy: nil,
+           after_commit: nil,
+           define_paperclip_callbacks: nil,
+           extend: nil,
+           field: nil,
+           included_modules: [::Mongoid::Document],
+           name: 'Mongo')
     end
   end
 end

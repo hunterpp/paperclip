@@ -18,6 +18,7 @@ module Paperclip
       register_new_attachment
       add_active_record_callbacks
       add_paperclip_callbacks
+      define_mongoid_fields
     end
 
     private
@@ -88,6 +89,15 @@ module Paperclip
       @klass.send(
         :define_paperclip_callbacks,
         :post_process, :"#{@name}_post_process")
+    end
+
+    def define_mongoid_fields
+      if defined?(::Mongoid) && @klass.included_modules.include?(::Mongoid::Document)
+        @klass.send(:field, :"#{@name}_file_name", :type => String)
+        @klass.send(:field, :"#{@name}_content_type", :type => String)
+        @klass.send(:field, :"#{@name}_file_size", :type => Integer)
+        @klass.send(:field, :"#{@name}_updated_at", :type => Time)
+      end
     end
 
     module ClassMethods

@@ -131,6 +131,13 @@ class InterpolationsTest < Test::Unit::TestCase
     assert_equal "32f/nj2/3oi", Paperclip::Interpolations.id_partition(attachment, :style)
   end
 
+  should "return the partitioned id of the attachment when the id is a Moped::BSON::ObjectId" do
+    attachment = mock
+    attachment.expects(:id).returns(::Moped::BSON::ObjectId.from_string("aaaabbbbccccddddeeeeffff"))
+    attachment.expects(:instance).returns(attachment)
+    assert_equal "aaaa/bbbb/cccc/dddd/eeee/ffff", Paperclip::Interpolations.id_partition(attachment, :style)
+  end
+
   should "return nil for the partitioned id of an attachment to a new record (when the id is nil)" do
     attachment = mock
     attachment.expects(:id).returns(nil)
